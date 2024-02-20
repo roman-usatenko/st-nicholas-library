@@ -107,7 +107,7 @@ $(function () {
         if (!confirm('Are you sure you want to logout?')) {
             return;
         }
-        window.location.href = '/logout';
+        window.location.href = '/auth/logout';
     });
 
     DOM.btnAddBook.on('click', function () {

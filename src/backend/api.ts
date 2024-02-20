@@ -10,7 +10,6 @@ router.get('/library', (req: Request, res: Response) => {
   const result: Library = {};
   if (req.isAuthenticated()) {
     result.user = req.user as User;
-    const u = req.user;
   }
   result.books = db.getBooks()
     .map((record) => toBook(record, req.isAuthenticated()));

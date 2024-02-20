@@ -1,4 +1,3 @@
-import { storage } from "./test-storage";
 import { Storage } from "@google-cloud/storage";
 
 export interface BookRecord {
@@ -17,7 +16,6 @@ class DB {
 
     public async load() {
         console.log("Loading from external storage");
-        console.log(process.env['GOOGLE_APPLICATION_CREDENTIALS']);
         const json = await this.storage
             .bucket(DB.BUCKET_NAME)
             .file(DB.OBJECT_NAME)
@@ -26,6 +24,7 @@ class DB {
         storage.forEach((record) => {
             this.books[record.id] = record;
         });
+        console.log("Loaded " + Object.keys(this.books).length + " books");
     }
 
     private save() {
@@ -38,6 +37,10 @@ class DB {
                 metadata: {
                     contentType: "application/json",
                 },
+            }).then(() => {
+                console.log("Saved " + data.length + " books");
+            }).catch((error) => {
+                console.error("Error saving", error);
             });
     }
 
@@ -46,6 +49,7 @@ class DB {
     }
 
     public upsertBook(book: BookRecord, shelf: number): BookRecord {
+        console.log("Updating ", book);
         var existing = this.books[book.id];
         if (existing) {
             if (this.getShelf(existing) === shelf) {
