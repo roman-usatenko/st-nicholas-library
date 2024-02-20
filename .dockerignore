@@ -1,0 +1,13 @@
+.DS_Store
+.vscode
+.git
+.gitignore
+.dockerignore
+.env
+key.json
+Dockerfile
+node_modules
+out
+deploy
+public/bundle.*
+README.md

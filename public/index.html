@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>St Nicholas Cathedral Library</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="bundle.css">
+  <link rel="icon" href="img/StNicholas.png" type="image/png">
+</head>
+
+<body>
+  <div class="container">
+
+    <header id="header" class="p-3">
+      <div class="container">
+        <div class="d-flex flex-wrap align-items-center justify-content-between">
+          <div class="d-flex align-items-center mb-2 mb-lg-0 link-body-emphasis text-decoration-none">
+            <img src="img/logo.jpg" alt="logo" class="me-2" height="70">
+          </div>
+
+          <form class="flex-grow-1 mx-2" role="search" onsubmit="event.preventDefault();">
+            <input id="search" type="search" class="form-control" autofocus placeholder="Search for books..."
+              aria-label="Search">
+          </form>
+
+          <button id="btnAddBook" type="button" class="btn btn-outline-success me-2" data-bs-toggle='tooltip' data-bs-placement="bottom"
+            data-bs-title='Add new book' style="display: none;">
+            <i class="fas fa-plus"></i>
+          </button>
+
+          <button id="btnLogin" type="button" class="btn btn-outline-secondary" data-bs-toggle='tooltip' data-bs-placement="bottom"
+            data-bs-title='Admin log in'>
+            <i class="fas fa-sign-in-alt"></i>
+          </button>
+
+          <button id="btnLogout" type="button" class="btn btn-danger" data-bs-toggle='tooltip' data-bs-placement="bottom" style="display: none;">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+
+        </div>
+      </div>
+    </header>
+
+    <table id="catalog">
+      <thead>
+        <tr>
+          <th>Book</th>
+          <th>Shelf</th>
+          <th>Availability</th>
+        </tr>
+      </thead>
+    </table>
+
+    <div class="modal fade" id="editor" tabindex="-1" aria-labelledby="editorLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="editorLabel">Modal title</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edId">
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="edDescription">
+              <label for="edDescription">Book description</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="edComment">
+              <label for="edComment">Comment</label>
+              <button id="btnClearComment" class="btn btn-link position-absolute top-50 end-0 translate-middle-y">
+                <i class="fas fa-backspace"></i>
+              </button>
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="form-floating mb-3">
+                  <input type="text" class="form-control" id="edDueDate" data-provide="datepicker">
+                  <label for="edDueDate">Due date</label>
+                  <button id="btnClearDueDate"
+                    class="btn btn-link position-absolute top-50 end-0 translate-middle-y">
+                    <i class="fas fa-backspace"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-floating">
+                  <input type="text" class="form-control" id="edShelf" placeholder="Shelf #" aria-label="Shelf #">
+                  <label for="edShelf">Shelf #</label>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button id="btnSave" type="button" class="btn btn-primary">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="bundle.js"></script>
+</body>

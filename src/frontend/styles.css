@@ -1,0 +1,41 @@
+@import 'bootstrap/dist/css/bootstrap.css';
+
+table.dataTable>tbody>tr:nth-child(odd) {
+  background-color: #eeeeee; /* Light color for odd rows */
+}
+
+table.dataTable>tbody>tr:nth-child(even) {
+  background-color: #ffffff; /* Keep even rows white or use a different color if desired */
+}
+
+
+table.dataTable>tbody>tr:hover {
+  background-color: #deedfc !important;
+  cursor: pointer; 
+}
+
+table.dataTable {
+  width: 100% !important;
+}
+
+
+.logo {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto;
+  display: block;
+
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.fas.fa-spinner.spinner {
+  animation: spin 2s linear infinite;
+}
+
+.dropdown-toggle:after {
+  display: none;
+}
