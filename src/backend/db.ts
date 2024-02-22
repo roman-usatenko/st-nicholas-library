@@ -16,6 +16,10 @@ class DB {
 
     public async load() {
         console.log("Loading from external storage");
+        if(process.env.DEV_MODE === "true") {
+            console.log("!!! Dev mode enabled, skipping load");
+            return;
+        }
         const json = await this.storage
             .bucket(DB.BUCKET_NAME)
             .file(DB.OBJECT_NAME)
@@ -29,6 +33,10 @@ class DB {
 
     private save() {
         console.log("Saving to external storage");
+        if(process.env.DEV_MODE === "true") {
+            console.log("!!! Dev mode enabled, skipping save");
+            return;
+        }
         const data = Object.values(this.books);
         this.storage
             .bucket(DB.BUCKET_NAME)

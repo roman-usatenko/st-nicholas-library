@@ -2,17 +2,16 @@ import express from 'express';
 import { Request, Response } from 'express';
 import { Library, Book, User } from '../protocol';
 import { db, BookRecord } from './db.js';
+import { getAuthenticatedUser } from './auth.js';
 
 export const router = express.Router();
 router.use(express.json());
 
 router.get('/library', (req: Request, res: Response) => {
   const result: Library = {};
-  if (req.isAuthenticated()) {
-    result.user = req.user as User;
-  }
+  result.user = getAuthenticatedUser(req);
   result.books = db.getBooks()
-    .map((record) => toBook(record, req.isAuthenticated()));
+    .map((record) => toBook(record, result.user !== undefined));
   res.json(result);
 });
 
@@ -37,7 +36,8 @@ function fromBook(data: Book): BookRecord {
 }
 
 router.post('/update', (req: Request, res: Response) => {
-  if (!req.isAuthenticated()) {
+  const user = getAuthenticatedUser(req);
+  if (user === undefined) {
     res.sendStatus(401);
     return;
   }
