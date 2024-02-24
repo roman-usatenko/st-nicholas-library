@@ -1,7 +1,7 @@
 export interface Book {
     id: number;
     description: string;
-    shelf: number;
+    shelf?: number;
     comment?: string;
     dueDate?: number;
     lastUpdated?: number;

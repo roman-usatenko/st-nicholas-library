@@ -54,7 +54,7 @@ export class Editor {
         if (book) {
             DOM.edId.val(book.id);
             DOM.edDescription.val(book.description);
-            DOM.edShelf.val(book.shelf);
+            DOM.edShelf.val(book.shelf || "");
             DOM.edDueDate.val(book.dueDate ? new Date(book.dueDate * 1000).toISOString().slice(0, 10) : "");
             DOM.edComment.val(book.comment || "");
             DOM.btnBulkImport.hide();

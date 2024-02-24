@@ -4,7 +4,7 @@ import { PassThrough } from 'stream';
 import readline from 'readline';
 import { Request, Response } from 'express';
 import { Library, Book, User } from '../protocol';
-import { db, BookRecord } from './db.js';
+import { db } from './db.js';
 import { getAuthenticatedUser } from './auth.js';
 
 export const router = express.Router();
@@ -14,9 +14,21 @@ const upload = multer();
 router.get('/library', (req: Request, res: Response) => {
   const result: Library = {};
   result.user = getAuthenticatedUser(req);
-  result.books = db.getBooks()
-    .map((record) => toBook(record, result.user !== undefined));
-  res.json(result);
+  result.books = db.getBooks();
+  if (!result.user) {
+    result.books.forEach(stripSensitiveData);
+  }
+  if ('csv' in req.query) {
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="library.csv"');
+    var csv = "";
+    result.books.forEach(book => {
+      csv += `#${book.id},${book.description}\n`;
+    });
+    res.send(csv);
+  } else {
+    res.json(result);
+  }
 });
 
 router.post('/update', (req: Request, res: Response) => {
@@ -25,10 +37,14 @@ router.post('/update', (req: Request, res: Response) => {
     res.sendStatus(401);
     return;
   }
-  console.log("Update request from " + user.name);
-  const data = req.body as Book;
-  const result = db.upsertBook(toBookRecord(data, user), data.shelf);
-  res.json(toBook(result, true));
+  const book = req.body as Book;
+  if (!book) {
+    res.sendStatus(400);
+    return;
+  }
+  setLastUpdated(book, user);
+  const result = db.upsertBook(book);
+  res.json(result);
 });
 
 router.delete('/delete/:id', (req: Request, res: Response) => {
@@ -64,9 +80,10 @@ router.post('/bulk-import', upload.single('file'), (req: Request, res: Response)
     crlfDelay: Infinity
   });
   rl.on('line', (line: string) => {
-    const location = toBookLocation(line, user);
-    if (location) {
-      db.upsertBook(location.book, location.shelf, true);
+    const book = parseBookLine(line);
+    if (book) {
+      setLastUpdated(book, user);
+      db.upsertBook(book, true);
       inserted = true;
     }
   });
@@ -79,55 +96,50 @@ router.post('/bulk-import', upload.single('file'), (req: Request, res: Response)
   });
 });
 
-
-function toBook(record: BookRecord, isAuthenticated: boolean): Book {
-  return {
-    id: record.id,
-    description: record.description,
-    shelf: db.getShelf(record),
-    comment: isAuthenticated ? record.comment : "",
-    dueDate: record.dueDate,
-    lastUpdated: isAuthenticated ? record.lastUpdated : 0,
-    lastAdmin: isAuthenticated ? record.lastAdmin : ""
-  };
+function setLastUpdated(book: Book, user: User) {
+  book.lastUpdated = Date.now();
+  book.lastAdmin = user.name;
 }
 
-function toBookRecord(data: Book, user: User): BookRecord {
-  return {
-    id: data.id,
-    description: data.description,
-    comment: data.comment,
-    dueDate: data.dueDate,
-    lastUpdated: Date.now(),
-    lastAdmin: user.name
-  };
+function stripSensitiveData(book: Book) {
+  book.comment = "";
+  book.lastUpdated = 0;
+  book.lastAdmin = "";
 }
 
-interface BookLocation {
-  book: BookRecord;
-  shelf: number;
-}
-
-function toBookLocation(data: string, user: User): BookLocation | undefined {
+function parseBookLine(data: string): Book | undefined {
   data = data.trim();
-  if (data.startsWith("#")) {
+  if (data.startsWith("//")) {
+    console.log("Skipping comment: " + data);
     return undefined;
   }
   var idx = data.indexOf(',');
   if (idx < 1 || idx >= data.length - 1) {
+    console.log("Skipping invalid line: " + data);
     return undefined;
   }
-  const shelf = parseInt(data.substring(0, idx).trim());
-  if (isNaN(shelf)) {
+  const id = data.substring(0, idx).trim();
+  if (id.startsWith("#")) {
+    const bookId = parseInt(id.substring(1));
+    if (isNaN(bookId) || bookId < 1) {
+      console.log("Skipping invalid book id: " + data);
+      return undefined;
+    } else {
+      return {
+        id: bookId,
+        description: data.substring(idx + 1).trim(),
+        shelf: Math.round(bookId / 1000)
+      };
+    }
+  }
+  const shelf = parseInt(id);
+  if (isNaN(shelf) || shelf < 1 || shelf > 1000) {
+    console.log("Skipping invalid shelf: " + data);
     return undefined;
   }
-  const description = data.substring(idx + 1).trim();
   return {
-    book: {
-      description,
-      lastUpdated: Date.now(),
-      lastAdmin: user.name,
-    } as BookRecord,
+    id: 0,
+    description: data.substring(idx + 1).trim(),
     shelf: shelf
   };
 }

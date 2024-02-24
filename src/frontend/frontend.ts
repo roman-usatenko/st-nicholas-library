@@ -91,9 +91,11 @@ $(function () {
             });
         } else {
             editor.show(undefined, (book) => { 
-                if(book) {
+                if (!book) {
+                    table.ajax.reload().draw();
+                } else {
                     table.row.add(book).draw();
-                } 
+                }
             });
         }
     });
@@ -129,5 +131,10 @@ $(function () {
                 table.row.add(book).draw();
             }
         });
+    });
+
+    DOM.catalog.on('draw.dt', function () {
+        var totalRows = table.data().count();
+        DOM.search.attr('placeholder', "Search among " + totalRows + " books...");
     });
 });

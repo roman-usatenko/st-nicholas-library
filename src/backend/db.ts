@@ -1,19 +1,11 @@
 import { Storage } from "@google-cloud/storage";
-
-export interface BookRecord {
-    id: number;
-    description: string;
-    comment?: string;
-    dueDate?: number;
-    lastUpdated?: number;
-    lastAdmin?: string;
-}
+import { Book } from "../protocol";
 
 class DB {
     private static readonly BUCKET_NAME = "st-nicholas-library-bucket";
     private static readonly OBJECT_NAME = "library.json";
 
-    private readonly books: Record<number, BookRecord> = {}
+    private readonly books: Record<number, Book> = {}
     private storage = new Storage();
 
     public async load() {
@@ -26,8 +18,11 @@ class DB {
             .bucket(DB.BUCKET_NAME)
             .file(DB.OBJECT_NAME)
             .download();
-        const storage = JSON.parse(json.toString()) as BookRecord[];
+        const storage = JSON.parse(json.toString()) as Book[];
         storage.forEach((record) => {
+            if(!record.shelf) {
+                record.shelf = Math.round(record.id / 1000);
+            }
             this.books[record.id] = record;
         });
         console.log("Loaded " + Object.keys(this.books).length + " books");
@@ -54,40 +49,33 @@ class DB {
             });
     }
 
-    public getShelf(book: BookRecord): number {
-        return Math.round(book.id / 1000);
-    }
-
-    public upsertBook(book: BookRecord, shelf: number, skipSave:boolean = false): BookRecord {
-        console.log(`Updating shelf ${shelf} -> ${book.description}`);
+    public upsertBook(book: Book, bulkImport:boolean = false): Book {
+        console.log(`Updating ${JSON.stringify(book)}`);
         var existing = this.books[book.id];
         if (existing) {
-            if (this.getShelf(existing) === shelf) {
-                existing.description = book.description;
-                existing.comment = book.comment;
-                existing.dueDate = book.dueDate;
-                existing.lastUpdated = book.lastUpdated;
-                existing.lastAdmin = book.lastAdmin;
-                if(!skipSave) {
-                    this.save();
-                }
-                return existing;
-            } else {
-                delete this.books[book.id];
+            existing.description = book.description || existing.description;
+            existing.shelf = bulkImport ? existing.shelf : book.shelf;
+            existing.comment = bulkImport ? existing.comment : book.comment;
+            existing.dueDate = bulkImport ? existing.dueDate : book.dueDate;
+            existing.lastUpdated = book.lastUpdated;
+            existing.lastAdmin = book.lastAdmin;
+            if(!bulkImport) {
+                this.save();
             }
+            return existing;
         }
-        book.id = shelf * 1000;
+        book.id = (book.shelf || 0) * 1000;
         while (this.books[book.id]) {
             book.id++;
         }
         this.books[book.id] = book;
-        if(!skipSave) {
+        if(!bulkImport) {
             this.save();
         }
         return book;
     }
 
-    public getBooks(): BookRecord[] {
+    public getBooks(): Book[] {
         return Object.values(this.books);
     }
 
