@@ -80,10 +80,18 @@ $(function () {
     $('#catalog tbody').on('click', 'tr', function () {
         const selector = this;
         var data = table.row(selector).data();
-        if(data) {
-            editor.show(data as Book, (data) => { table.row(selector).data(data) });
+        if (data) {
+            editor.show(data as Book, (data) => { 
+                if(data) {
+                    table.row(selector).data(data);
+                } 
+            });
         } else {
-            editor.show(undefined, (book) => { table.row.add(book).draw() });
+            editor.show(undefined, (book) => { 
+                if(book) {
+                    table.row.add(book).draw();
+                } 
+            });
         }
     });
 
@@ -111,6 +119,12 @@ $(function () {
     });
 
     DOM.btnAddBook.on('click', function () {
-        editor.show(undefined, (book) => { table.row.add(book).draw() });
+        editor.show(undefined, (book) => {
+            if (!book) {
+                table.ajax.reload().draw();
+            } else {
+                table.row.add(book).draw();
+            }
+        });
     });
 });

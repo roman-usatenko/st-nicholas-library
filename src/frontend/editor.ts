@@ -7,12 +7,28 @@ import Cookies from 'js-cookie';
 export class Editor {
     private modal: Modal;
     private enabled:boolean = false;
+    private bulkImport:boolean = false;
     private book?: Book;
-    private saveCallback?: (book: Book) => void;
+    private saveCallback?: (book?: Book) => void;
 
     constructor() {
         this.modal = new Modal("#editor");
         DOM.btnSave.on("click", this.save.bind(this));
+        DOM.btnBulkImport.on("click", this.toggleBulkImport.bind(this));
+    }
+
+    private toggleBulkImport() {
+        if(this.bulkImport) {
+            DOM.formBulkImport.hide();
+            DOM.formSingleBook.show();
+            DOM.btnBulkImport.text("Bulk import");
+        } else {
+            DOM.formBulkImport.show();
+            DOM.formSingleBook.hide();
+            DOM.btnBulkImport.text("Single book");
+        }
+        this.bulkImport = !this.bulkImport;
+        
     }
 
     public enable(user: User) {
@@ -23,7 +39,7 @@ export class Editor {
         DOM.btnLogout.attr("data-bs-title", "Logout " + user.name);
     }
 
-    public show(book?: Book, saveCallback?:(book: Book) => void) {
+    public show(book?: Book, saveCallback?:(book?: Book) => void) {
         if (!this.enabled) {
             return;
         }
@@ -31,12 +47,15 @@ export class Editor {
         this.saveCallback = saveCallback;
         const title = book ? "Book information" : "Add new book";
         DOM.editorLabel.text(title);
+        this.bulkImport = true;
+        this.toggleBulkImport();
         if (book) {
             DOM.edId.val(book.id);
             DOM.edDescription.val(book.description);
             DOM.edShelf.val(book.shelf);
             DOM.edDueDate.val(book.dueDate ? new Date(book.dueDate * 1000).toISOString().slice(0, 10) : "");
             DOM.edComment.val(book.comment || "");
+            DOM.btnBulkImport.hide();
         } else {
             DOM.edId.val("");
             DOM.edDescription.val("");
@@ -47,6 +66,7 @@ export class Editor {
             if(lastUsedShelf) {
                 DOM.edShelf.val(lastUsedShelf);
             }
+            DOM.btnBulkImport.show();
         }
         this.modal.toggle();
         DOM.edDescription.focus();
@@ -56,6 +76,43 @@ export class Editor {
         if (!this.enabled) {
             return;
         }
+        if(this.bulkImport) {
+            this.saveBulkImport();
+        } else {
+            this.saveSingleBook();
+        }
+    }
+    
+    public saveBulkImport() {
+        var file = DOM.edBulkImport.prop('files')[0];
+        if (!file) {
+            alert("Please select a file to import");
+            return;
+        }
+        var formData = new FormData();
+        var blob = new Blob([file], {type: file.type});
+        formData.append('file', blob, file.name);
+        const callback = this.saveCallback;
+        const modal = this.modal;
+        $.ajax({
+            url: '/api/bulk-import',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                modal.toggle();
+                if(callback) {
+                    callback();
+                }
+            },
+            error: function(xhr, err, exception?) {
+                alert('Error uploading file: ' + exception);
+            }
+        });
+    }
+
+    public saveSingleBook() {
         if(!DOM.edDescription.val()) {
             alert("Please provide the book description");
             return;
@@ -108,7 +165,7 @@ export class Editor {
                 }
             },
             error: function(xhr, err, exception?) {
-                alert("Error: " + exception);
+                alert("Error saving the book: " + exception);
             }
         });
     }

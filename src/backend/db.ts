@@ -31,7 +31,7 @@ class DB {
         console.log("Loaded " + Object.keys(this.books).length + " books");
     }
 
-    private save() {
+    public save() {
         console.log("Saving to external storage");
         if(process.env.DEV_MODE === "true") {
             console.log("!!! Dev mode enabled, skipping save");
@@ -56,15 +56,17 @@ class DB {
         return Math.round(book.id / 1000);
     }
 
-    public upsertBook(book: BookRecord, shelf: number): BookRecord {
-        console.log("Updating ", book);
+    public upsertBook(book: BookRecord, shelf: number, skipSave:boolean = false): BookRecord {
+        console.log(`Updating shelf ${shelf} -> ${book.description}`);
         var existing = this.books[book.id];
         if (existing) {
             if (this.getShelf(existing) === shelf) {
                 existing.description = book.description;
                 existing.comment = book.comment;
                 existing.dueDate = book.dueDate;
-                this.save();
+                if(!skipSave) {
+                    this.save();
+                }
                 return existing;
             } else {
                 delete this.books[book.id];
@@ -75,7 +77,9 @@ class DB {
             book.id++;
         }
         this.books[book.id] = book;
-        this.save();
+        if(!skipSave) {
+            this.save();
+        }
         return book;
     }
 
