@@ -49,6 +49,7 @@ export class Editor {
         DOM.editorLabel.text(title);
         this.bulkImport = true;
         this.toggleBulkImport();
+        DOM.edLastUpdated.hide();
         if (book) {
             DOM.edId.val(book.id);
             DOM.edDescription.val(book.description);
@@ -56,6 +57,10 @@ export class Editor {
             DOM.edDueDate.val(book.dueDate ? new Date(book.dueDate * 1000).toISOString().slice(0, 10) : "");
             DOM.edComment.val(book.comment || "");
             DOM.btnBulkImport.hide();
+            if(book.lastUpdated && book.lastAdmin) {
+                DOM.edLastUpdated.text("Last updated on " + new Date(book.lastUpdated).toLocaleString() + " by " + book.lastAdmin);
+                DOM.edLastUpdated.show();
+            }
         } else {
             DOM.edId.val("");
             DOM.edDescription.val("");

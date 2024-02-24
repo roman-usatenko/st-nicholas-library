@@ -4,6 +4,8 @@ export interface Book {
     shelf: number;
     comment?: string;
     dueDate?: number;
+    lastUpdated?: number;
+    lastAdmin?: string;
 }
 
 export interface User {

@@ -26,7 +26,7 @@ router.post('/update', (req: Request, res: Response) => {
     return;
   }
   const data = req.body as Book;
-  const result = db.upsertBook(toBookRecord(data), data.shelf);
+  const result = db.upsertBook(toBookRecord(data, user), data.shelf);
   res.json(toBook(result, true));
 });
 
@@ -42,7 +42,7 @@ router.post('/bulk-import', upload.single('file'), (req: Request, res: Response)
   }
   const bufferStream = new PassThrough();
   bufferStream.end(req.file.buffer);
-  
+
   var inserted = false;
   console.log("Importing books:");
   const rl = readline.createInterface({
@@ -50,14 +50,14 @@ router.post('/bulk-import', upload.single('file'), (req: Request, res: Response)
     crlfDelay: Infinity
   });
   rl.on('line', (line: string) => {
-    const location = toBookLocation(line);
-    if(location) {
+    const location = toBookLocation(line, user);
+    if (location) {
       db.upsertBook(location.book, location.shelf, true);
       inserted = true;
     }
   });
   rl.on('close', () => {
-    if(inserted) {
+    if (inserted) {
       db.save();
     }
     res.sendStatus(200);
@@ -66,23 +66,26 @@ router.post('/bulk-import', upload.single('file'), (req: Request, res: Response)
 });
 
 
-function toBook(row: BookRecord, isAuthenticated: boolean): Book {
-  const now = Date.now() / 1000;
+function toBook(record: BookRecord, isAuthenticated: boolean): Book {
   return {
-    id: row.id,
-    description: row.description,
-    shelf: db.getShelf(row),
-    comment: isAuthenticated ? row.comment : "",
-    dueDate: row.dueDate
+    id: record.id,
+    description: record.description,
+    shelf: db.getShelf(record),
+    comment: isAuthenticated ? record.comment : "",
+    dueDate: record.dueDate,
+    lastUpdated: isAuthenticated ? record.lastUpdated : 0,
+    lastAdmin: isAuthenticated ? record.lastAdmin : ""
   };
 }
 
-function toBookRecord(data: Book): BookRecord {
+function toBookRecord(data: Book, user: User): BookRecord {
   return {
     id: data.id,
     description: data.description,
     comment: data.comment,
-    dueDate: data.dueDate
+    dueDate: data.dueDate,
+    lastUpdated: Date.now(),
+    lastAdmin: user.name
   };
 }
 
@@ -91,22 +94,26 @@ interface BookLocation {
   shelf: number;
 }
 
-function toBookLocation(data: string): BookLocation|undefined {
+function toBookLocation(data: string, user: User): BookLocation | undefined {
   data = data.trim();
-  if(data.startsWith("#")) {
+  if (data.startsWith("#")) {
     return undefined;
   }
   var idx = data.indexOf(',');
-  if(idx < 1 || idx >= data.length - 1) {
+  if (idx < 1 || idx >= data.length - 1) {
     return undefined;
   }
   const shelf = parseInt(data.substring(0, idx).trim());
-  if(isNaN(shelf)) {
+  if (isNaN(shelf)) {
     return undefined;
   }
   const description = data.substring(idx + 1).trim();
   return {
-    book: {description} as BookRecord,
+    book: {
+      description,
+      lastUpdated: Date.now(),
+      lastAdmin: user.name,
+    } as BookRecord,
     shelf: shelf
   };
 }

@@ -39,3 +39,8 @@ table.dataTable {
 .dropdown-toggle:after {
   display: none;
 }
+
+#edLastUpdated {
+  font-size: smaller;
+  font-style: italic;
+}

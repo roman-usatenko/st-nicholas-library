@@ -9,6 +9,7 @@ export class DOM {
     static readonly edId = $('#edId');
     static readonly edDescription = $('#edDescription');
     static readonly edShelf = $('#edShelf');
+    static readonly edLastUpdated = $('#edLastUpdated');
     static readonly edDueDate = $('#edDueDate');
     static readonly edComment = $('#edComment');
     static readonly btnClearComment = $('#btnClearComment');

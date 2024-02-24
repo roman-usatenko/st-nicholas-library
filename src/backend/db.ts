@@ -5,6 +5,8 @@ export interface BookRecord {
     description: string;
     comment?: string;
     dueDate?: number;
+    lastUpdated?: number;
+    lastAdmin?: string;
 }
 
 class DB {
@@ -64,6 +66,8 @@ class DB {
                 existing.description = book.description;
                 existing.comment = book.comment;
                 existing.dueDate = book.dueDate;
+                existing.lastUpdated = book.lastUpdated;
+                existing.lastAdmin = book.lastAdmin;
                 if(!skipSave) {
                     this.save();
                 }
