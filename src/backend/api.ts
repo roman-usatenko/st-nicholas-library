@@ -25,9 +25,22 @@ router.post('/update', (req: Request, res: Response) => {
     res.sendStatus(401);
     return;
   }
+  console.log("Update request from " + user.name);
   const data = req.body as Book;
   const result = db.upsertBook(toBookRecord(data, user), data.shelf);
   res.json(toBook(result, true));
+});
+
+router.delete('/delete/:id', (req: Request, res: Response) => {
+  const user = getAuthenticatedUser(req);
+  if (user === undefined) {
+    res.sendStatus(401);
+    return;
+  }
+  console.log("Delete request from " + user.name);
+  const id = req.params.id as unknown as number;
+  db.deleteBook(id);
+  res.sendStatus(200);
 });
 
 router.post('/bulk-import', upload.single('file'), (req: Request, res: Response) => {
@@ -36,6 +49,7 @@ router.post('/bulk-import', upload.single('file'), (req: Request, res: Response)
     res.sendStatus(401);
     return;
   }
+  console.log("Bulk import request from " + user.name);
   if (req.file === undefined) {
     res.sendStatus(400);
     return;

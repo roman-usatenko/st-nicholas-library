@@ -19,6 +19,7 @@ export class DOM {
     static readonly btnLogin = $('#btnLogin');
     static readonly btnLogout = $('#btnLogout');
     static readonly btnBulkImport = $('#btnBulkImport');
+    static readonly btnDelete = $('#btnDelete');
     static readonly edBulkImport = $('#edBulkImport');
     static readonly formBulkImport = $('#formBulkImport');
     static readonly formSingleBook = $('#formSingleBook');

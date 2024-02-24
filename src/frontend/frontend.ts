@@ -84,7 +84,10 @@ $(function () {
             editor.show(data as Book, (data) => { 
                 if(data) {
                     table.row(selector).data(data);
-                } 
+                } else {
+                    table.row(selector).remove();
+                }
+                table.draw(); 
             });
         } else {
             editor.show(undefined, (book) => { 

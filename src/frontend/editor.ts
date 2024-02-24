@@ -1,13 +1,13 @@
 import $ from 'jquery';
-import {Modal} from 'bootstrap';
-import {Book, User} from '../protocol.js';
-import {DOM} from './dom-elements';
+import { Modal } from 'bootstrap';
+import { Book, User } from '../protocol.js';
+import { DOM } from './dom-elements';
 import Cookies from 'js-cookie';
 
 export class Editor {
     private modal: Modal;
-    private enabled:boolean = false;
-    private bulkImport:boolean = false;
+    private enabled: boolean = false;
+    private bulkImport: boolean = false;
     private book?: Book;
     private saveCallback?: (book?: Book) => void;
 
@@ -15,10 +15,11 @@ export class Editor {
         this.modal = new Modal("#editor");
         DOM.btnSave.on("click", this.save.bind(this));
         DOM.btnBulkImport.on("click", this.toggleBulkImport.bind(this));
+        DOM.btnDelete.on("click", this.delete.bind(this));
     }
 
     private toggleBulkImport() {
-        if(this.bulkImport) {
+        if (this.bulkImport) {
             DOM.formBulkImport.hide();
             DOM.formSingleBook.show();
             DOM.btnBulkImport.text("Bulk import");
@@ -28,7 +29,7 @@ export class Editor {
             DOM.btnBulkImport.text("Single book");
         }
         this.bulkImport = !this.bulkImport;
-        
+
     }
 
     public enable(user: User) {
@@ -39,7 +40,7 @@ export class Editor {
         DOM.btnLogout.attr("data-bs-title", "Logout " + user.name);
     }
 
-    public show(book?: Book, saveCallback?:(book?: Book) => void) {
+    public show(book?: Book, saveCallback?: (book?: Book) => void) {
         if (!this.enabled) {
             return;
         }
@@ -57,10 +58,11 @@ export class Editor {
             DOM.edDueDate.val(book.dueDate ? new Date(book.dueDate * 1000).toISOString().slice(0, 10) : "");
             DOM.edComment.val(book.comment || "");
             DOM.btnBulkImport.hide();
-            if(book.lastUpdated && book.lastAdmin) {
+            if (book.lastUpdated && book.lastAdmin) {
                 DOM.edLastUpdated.text("Last updated on " + new Date(book.lastUpdated).toLocaleString() + " by " + book.lastAdmin);
                 DOM.edLastUpdated.show();
             }
+            DOM.btnDelete.show();
         } else {
             DOM.edId.val("");
             DOM.edDescription.val("");
@@ -68,10 +70,11 @@ export class Editor {
             DOM.edComment.val("");
             DOM.edShelf.val("");
             const lastUsedShelf = Cookies.get("lastUsedShelf");
-            if(lastUsedShelf) {
+            if (lastUsedShelf) {
                 DOM.edShelf.val(lastUsedShelf);
             }
             DOM.btnBulkImport.show();
+            DOM.btnDelete.hide();
         }
         this.modal.toggle();
         DOM.edDescription.focus();
@@ -81,13 +84,13 @@ export class Editor {
         if (!this.enabled) {
             return;
         }
-        if(this.bulkImport) {
+        if (this.bulkImport) {
             this.saveBulkImport();
         } else {
             this.saveSingleBook();
         }
     }
-    
+
     public saveBulkImport() {
         var file = DOM.edBulkImport.prop('files')[0];
         if (!file) {
@@ -95,7 +98,7 @@ export class Editor {
             return;
         }
         var formData = new FormData();
-        var blob = new Blob([file], {type: file.type});
+        var blob = new Blob([file], { type: file.type });
         formData.append('file', blob, file.name);
         const callback = this.saveCallback;
         const modal = this.modal;
@@ -105,43 +108,43 @@ export class Editor {
             data: formData,
             processData: false,
             contentType: false,
-            success: function(response) {
+            success: function (response) {
                 modal.toggle();
-                if(callback) {
+                if (callback) {
                     callback();
                 }
             },
-            error: function(xhr, err, exception?) {
+            error: function (xhr, err, exception?) {
                 alert('Error uploading file: ' + exception);
             }
         });
     }
 
     public saveSingleBook() {
-        if(!DOM.edDescription.val()) {
+        if (!DOM.edDescription.val()) {
             alert("Please provide the book description");
             return;
         }
 
-        var shelf:number | undefined = undefined;
-        if(!DOM.edShelf.val()) {
+        var shelf: number | undefined = undefined;
+        if (!DOM.edShelf.val()) {
             alert("Please provide the shelf number");
             return;
         } else {
             shelf = parseInt(DOM.edShelf.val() as string);
-            if(isNaN(shelf) || shelf < 1 || shelf > 1000) {
+            if (isNaN(shelf) || shelf < 1 || shelf > 1000) {
                 alert("Shelf number must be a number between 1 and 1000");
                 return;
             }
         }
         var dueDate: number | undefined = undefined;
-        if(DOM.edDueDate.val()) {
+        if (DOM.edDueDate.val()) {
             const parsed = Date.parse(DOM.edDueDate.val() as string);
-            if(isNaN(parsed)) {
+            if (isNaN(parsed)) {
                 alert("Please provide the due date in the format YYYY-MM-DD");
                 return;
             }
-            dueDate = parsed/ 1000;
+            dueDate = parsed / 1000;
         }
 
         const book: Book = {
@@ -160,18 +163,38 @@ export class Editor {
             dataType: 'json',
             contentType: 'application/json',
             data: JSON.stringify(book),
-            success: function(response) {
+            success: function (response) {
                 modal.toggle();
-                if(callback) {
+                if (callback) {
                     callback(book);
                 }
-                if(lastUsedShelf) {
+                if (lastUsedShelf) {
                     Cookies.set("lastUsedShelf", lastUsedShelf.toString(), { expires: 36500 });
                 }
             },
-            error: function(xhr, err, exception?) {
+            error: function (xhr, err, exception?) {
                 alert("Error saving the book: " + exception);
             }
         });
+    }
+
+    private delete() {
+        if (DOM.edId.val() && confirm("Are you sure you want to delete this book?")) {
+            const callback = this.saveCallback;
+            const modal = this.modal;
+            $.ajax({
+                url: 'api/delete/' + DOM.edId.val(),
+                method: 'DELETE',
+                success: function (response) {
+                    modal.toggle();
+                    if (callback) {
+                        callback();
+                    }
+                },
+                error: function (xhr, err, exception?) {
+                    alert("Error deleting the book: " + exception);
+                }
+            });
+        }
     }
 }

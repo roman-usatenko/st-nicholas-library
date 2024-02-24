@@ -91,6 +91,15 @@ class DB {
         return Object.values(this.books);
     }
 
+    public deleteBook(id: number) {
+        const book = this.books[id];
+        if(!book) {
+            return;
+        }
+        console.log(`Deleting ${JSON.stringify(book)}`);
+        delete this.books[id];
+        this.save();
+    }
 }
 
 export const db = new DB();
