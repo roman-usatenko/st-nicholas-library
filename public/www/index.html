@@ -85,10 +85,8 @@
         <audio id="auCorrect" src="audio/correct.mp3" preload="auto" />
         <audio id="auLoser" src="audio/loser.mp3" preload="auto" />
         <audio id="auBlackBox" src="audio/blackbox.mp3" preload="auto" />
-        <audio id="auTime" src="audio/time.mp3" preload="auto" />
-        <audio id="auTimeLast3" src="audio/time-last.mp3" preload="auto" />
-        <audio id="auTimeLast2" src="audio/time-last.mp3" preload="auto" />
-        <audio id="auTimeLast1" src="audio/time-last.mp3" preload="auto" />
+        <audio id="au60sec" src="audio/1min.mp3" preload="auto" />
+        <audio id="au20sec" src="audio/20secs.mp3" preload="auto" />
         <audio id="auTimeUp" src="audio/time-up.mp3" preload="auto" />
 
         <script src="js/jquery.min.js"></script>
@@ -113,18 +111,16 @@
                 };
 
                 var timerSeconds = 0;
-                var timeouts = Array.from({ length: 60 }, (v, i) => null);
 
-                const clearTimer = function () {
-                    for (let index = 0; index < timeouts.length; index++) {
-                        if (timeouts[index]) {
-                            clearTimeout(timeouts[index]);
-                        }
-                        timeouts[index] = null;
+                const countDown = function () {
+                    if (timerSeconds > 0) {
+                        timerSeconds -= 1;
+                        $('#txtTime').text(timerSeconds);
+                        setTimeout(countDown, 1000);
+                    } else {
+                        $('#divMain').show();
+                        $('#divTimer').hide();
                     }
-                    play('auTimeUp');
-                    $('#divMain').show();
-                    $('#divTimer').hide();
                 };
 
                 const setTimerOn = function (time) {
@@ -132,24 +128,8 @@
                     $('#txtTime').text(timerSeconds);
                     $('#divMain').hide();
                     $('#divTimer').show();
-                    for (let index = 0; index < time; index++) {
-                        let left = time - index - 1;
-                        let idx = index;
-                        timeouts[index] =
-                            setTimeout(function () {
-                                timeouts[idx] = null;
-                                $('#txtTime').text(left);
-                                if (left == 0) {
-                                    clearTimer();
-                                } else if (left <= 3) {
-                                    document.getElementById('auTimeLast' + left).play();
-                                }
-                            }, (index + 1) * 1000);
-                        if (idx > 0 && idx < 4) {
-                            document.getElementById('auTimeLast' + idx).currentTime = 0;
-                        }
-                    }
-                    play('auTime');
+                    play('au' + time + 'sec');
+                    setTimeout(countDown, 1000);
                 };
 
                 $('#btnIntro').on('click', function () {
@@ -183,7 +163,10 @@
                 });
 
                 $('#btnStopTimer').on('click', function () {
-                    clearTimer();
+                    timerSeconds = 0;
+                    play('auTimeUp');
+                    $('#divMain').show();
+                    $('#divTimer').hide();
                 });
             });
 
