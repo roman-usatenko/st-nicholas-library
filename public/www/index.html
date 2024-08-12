@@ -103,39 +103,52 @@
                 const stopAll = function () {
                     $('audio').each(function () {
                         this.pause();
+                        this.currentTime = 0;
                     });
                 };
 
                 const play = function (clip) {
                     stopAll();
-                    player = document.getElementById(clip);
-                    player.currentTime = 0;
-                    player.play();
+                    document.getElementById(clip).play();
                 };
 
                 var timerSeconds = 0;
+                var timeouts = Array.from({ length: 60 }, (v, i) => null);
 
-                setInterval(function () {
-                    if (timerSeconds > 0) {
-                        timerSeconds -= 1;
-                        $('#txtTime').text(timerSeconds);
-                        if (timerSeconds == 0) {
-                            play('auTimeUp');
-                            $('#divMain').show();
-                            $('#divTimer').hide();
-                        } else if (timerSeconds <= 3) {
-                            player = document.getElementById('auTimeLast' + timerSeconds);
-                            player.currentTime = 0;
-                            player.play();
+                const clearTimer = function () {
+                    for (let index = 0; index < timeouts.length; index++) {
+                        if (timeouts[index]) {
+                            clearTimeout(timeouts[index]);
                         }
+                        timeouts[index] = null;
                     }
-                }, 1000);
+                    play('auTimeUp');
+                    $('#divMain').show();
+                    $('#divTimer').hide();
+                };
 
                 const setTimerOn = function (time) {
                     timerSeconds = time;
                     $('#txtTime').text(timerSeconds);
                     $('#divMain').hide();
                     $('#divTimer').show();
+                    for (let index = 0; index < time; index++) {
+                        let left = time - index - 1;
+                        let idx = index;
+                        timeouts[index] =
+                            setTimeout(function () {
+                                timeouts[idx] = null;
+                                $('#txtTime').text(left);
+                                if (left == 0) {
+                                    clearTimer();
+                                } else if (left <= 3) {
+                                    document.getElementById('auTimeLast' + left).play();
+                                }
+                            }, (index + 1) * 1000);
+                        if (idx > 0 && idx < 4) {
+                            document.getElementById('auTimeLast' + idx).currentTime = 0;
+                        }
+                    }
                     play('auTime');
                 };
 
@@ -170,7 +183,7 @@
                 });
 
                 $('#btnStopTimer').on('click', function () {
-                    timerSeconds = 1;
+                    clearTimer();
                 });
             });
 
